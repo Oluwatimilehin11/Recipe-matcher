@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bake Matcher</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-amber-50 text-stone-800 min-h-screen py-8 px-4 font-sans">
+<div class="max-w-3xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow border border-amber-200">
+    <header class="text-center mb-8">
+        <h1 class="text-3xl font-extrabold text-amber-900 tracking-tight">🥖 Smart Bakery Matcher</h1>
+        <p class="text-stone-500 mt-2">What do you want to bake? Enter your ingredients and servings to find the closest match.</p>
+    </header>
+
+    <!-- 1. Category Selection -->
+    <div class="mb-6">
+        <label class="block text-sm font-bold text-stone-700 mb-2">1. What do you want to bake?</label>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <button type="button" class="cat-btn border-2 border-amber-400 bg-amber-500 text-white py-3 px-2 rounded-xl font-semibold text-center transition" data-filter="all">🌟 All Bakes</button>
+            <button type="button" class="cat-btn border-2 border-amber-300 hover:bg-amber-100 py-3 px-2 rounded-xl font-semibold text-center transition" data-filter="banana">🍌 Banana Bread</button>
+            <button type="button" class="cat-btn border-2 border-amber-300 hover:bg-amber-100 py-3 px-2 rounded-xl font-semibold text-center transition" data-filter="cake">🎂 Cakes</button>
+            <button type="button" class="cat-btn border-2 border-amber-300 hover:bg-amber-100 py-3 px-2 rounded-xl font-semibold text-center transition" data-filter="bread">🍞 Bread</button>
+        </div>
+    </div>
+
+    <!-- 2. Target Servings -->
+    <div class="mb-6">
+        <label class="block text-sm font-bold text-stone-700 mb-2">2. How many servings do you expect it to serve?</label>
+        <input type="number" id="servings" value="4" min="1" class="w-full p-3 border rounded-xl border-stone-300 font-bold text-lg text-amber-900 focus:outline-amber-600">
+    </div>
+
+    <!-- 3. Ingredients Input -->
+    <div class="mb-6">
+        <label class="block text-sm font-bold text-stone-700 mb-2">3. Ingredients you have in your kitchen:</label>
+        <div id="ingredientList" class="space-y-3">
+            <div class="flex gap-2 ing-row">
+                <input type="text" placeholder="e.g. flour" value="flour" class="name flex-1 p-2 border rounded-lg border-stone-300">
+                <input type="number" placeholder="Amt" value="300" class="amt w-24 p-2 border rounded-lg border-stone-300">
+                <select class="unit p-2 border rounded-lg border-stone-300">
+                    <option value="GRAM">Grams</option>
+                    <option value="MILLILITER">mL</option>
+                    <option value="PIECE">Pieces</option>
+                </select>
+                <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-2">✕</button>
+            </div>
+            <div class="flex gap-2 ing-row">
+                <input type="text" placeholder="e.g. banana" value="banana" class="name flex-1 p-2 border rounded-lg border-stone-300">
+                <input type="number" placeholder="Amt" value="3" class="amt w-24 p-2 border rounded-lg border-stone-300">
+                <select class="unit p-2 border rounded-lg border-stone-300">
+                    <option value="PIECE">Pieces</option>
+                    <option value="GRAM">Grams</option>
+                    <option value="MILLILITER">mL</option>
+                </select>
+                <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-2">✕</button>
+            </div>
+            <div class="flex gap-2 ing-row">
+                <input type="text" placeholder="e.g. butter" value="butter" class="name flex-1 p-2 border rounded-lg border-stone-300">
+                <input type="number" placeholder="Amt" value="100" class="amt w-24 p-2 border rounded-lg border-stone-300">
+                <select class="unit p-2 border rounded-lg border-stone-300">
+                    <option value="GRAM">Grams</option>
+                    <option value="MILLILITER">mL</option>
+                    <option value="PIECE">Pieces</option>
+                </select>
+                <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-2">✕</button>
+            </div>
+        </div>
+        <button type="button" id="addIngBtn" class="mt-2 text-sm font-semibold text-amber-700 hover:underline">+ Add another ingredient</button>
+    </div>
+
+    <!-- Match Button -->
+    <button id="findMatchesBtn" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-xl shadow transition text-lg">
+        Find Matching Recipes
+    </button>
+
+    <!-- Results -->
+    <div id="results" class="mt-8 space-y-4"></div>
+</div>
+
+<script>
+    let currentFilter = "all";
+
+    document.querySelectorAll('.cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.cat-btn').forEach(b => {
+          b.classList.remove('bg-amber-500', 'text-white');
+          b.classList.add('hover:bg-amber-100');
+        });
+        btn.classList.add('bg-amber-500', 'text-white');
+        btn.classList.remove('hover:bg-amber-100');
+        currentFilter = btn.getAttribute('data-filter');
+      });
+    });
+
+    document.getElementById('addIngBtn').addEventListener('click', () => {
+      const div = document.createElement('div');
+      div.className = 'flex gap-2 ing-row';
+      div.innerHTML = `
+        <input type="text" placeholder="e.g. sugar" class="name flex-1 p-2 border rounded-lg border-stone-300">
+        <input type="number" placeholder="Amt" class="amt w-24 p-2 border rounded-lg border-stone-300">
+        <select class="unit p-2 border rounded-lg border-stone-300">
+          <option value="GRAM">Grams</option>
+          <option value="MILLILITER">mL</option>
+          <option value="PIECE">Pieces</option>
+        </select>
+        <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-2">✕</button>
+      `;
+      document.getElementById('ingredientList').appendChild(div);
+    });
+
+    document.getElementById('findMatchesBtn').addEventListener('click', async () => {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '<p class="text-center text-stone-500">Calculating scaled recipes...</p>';
+
+      const rows = document.querySelectorAll('.ing-row');
+      const availableIngredients = Array.from(rows).map(r => ({
+        name: r.querySelector('.name').value.trim(),
+        amount: parseFloat(r.querySelector('.amt').value) || 0,
+        unit: r.querySelector('.unit').value
+      })).filter(i => i.name.length > 0);
+
+      const payload = {
+        targetServings: parseInt(document.getElementById('servings').value) || 1,
+        availableIngredients: availableIngredients
+      };
+
+      try {
+        const response = await fetch('/api/recipes/match', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        let matches = await response.json();
+
+        // Apply visual category filter
+        if (currentFilter !== "all") {
+          matches = matches.filter(m => m.title.toLowerCase().includes(currentFilter));
+        }
+
+        if (!matches || matches.length === 0) {
+          resultsDiv.innerHTML = '<div class="p-4 bg-amber-50 rounded-xl text-center text-stone-600">No matching recipes found for this category and pantry.</div>';
+          return;
+        }
+
+        resultsDiv.innerHTML = matches.map(recipe => `
+          <div class="border border-stone-200 bg-stone-50 rounded-xl p-5 shadow-sm">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <h3 class="text-xl font-bold text-amber-950">${recipe.title}</h3>
+                <span class="inline-block mt-1 text-xs px-2.5 py-0.5 rounded-full font-bold ${recipe.matchPercentage >= 75 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                  ${recipe.matchPercentage}% Match
+                </span>
+                <span class="text-xs text-stone-500 ml-2">Scaled for <strong>${recipe.targetServings} servings</strong></span>
+              </div>
+              <a href="${recipe.sourceUrl}" target="_blank" class="text-sm font-semibold text-amber-700 hover:underline">View Steps ↗</a>
+            </div>
+            <div class="mt-4">
+              <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Ingredients Scaled to Your Servings</h4>
+              <ul class="text-sm space-y-1">
+                ${recipe.scaledIngredients.map(ing => `
+                  <li class="flex justify-between py-1 border-b border-stone-200 ${ing.isSufficient ? 'text-stone-700' : 'text-rose-600 font-semibold'}">
+                    <span>${ing.name} — ${ing.requiredAmount} ${ing.unit.toLowerCase()}</span>
+                    <span>${ing.isSufficient ? '✓ Have enough' : `⚠ Need ${Math.round((ing.requiredAmount - ing.availableAmount)*10)/10} more`}</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        resultsDiv.innerHTML = '<p class="text-rose-500 text-center">Failed to fetch matches from server.</p>';
+      }
+    });
+</script>
+</body>
+</html>
