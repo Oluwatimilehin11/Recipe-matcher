@@ -1,32 +1,20 @@
-version: '3.8'
-
-services:
-  db:
-    image: postgres:16-alpine
-    container_name: recipe-postgres
-    restart: always
-    environment:
-      POSTGRES_DB: recipedb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  app:
-    build: .
-    container_name: recipe-app
-    restart: always
-    depends_on:
-      - db
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/recipedb
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgrespassword
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-
-volumes:
-  postgres_data:
+spring.application.name=RecipeProject
+  
+  # Database connection
+spring.datasource.url=jdbc:postgresql://127.0.0.1:5432/recipedb
+spring.datasource.username=postgres
+spring.datasource.password=postgrespassword
+spring.datasource.driver-class-name=org.postgresql.Driver
+  
+  # JPA / Hibernate configuration
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.open-in-view=false
+  
+  # Server port
+server.port=8080
+  
+  # External Web Recipe Search
+search.google.api-key=${GOOGLE_SEARCH_API_KEY:}
+search.google.cx=${GOOGLE_SEARCH_CX:}
