@@ -108,6 +108,15 @@
       document.getElementById('ingredientList').appendChild(div);
     });
 
+    // Helper to format safe external URLs
+    function formatExternalUrl(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return null;
+      const trimmed = rawUrl.trim();
+      if (!trimmed || trimmed === 'undefined' || trimmed === 'null') return null;
+      if (/^https?:\/\//i.test(trimmed)) return trimmed;
+      return `https://${trimmed}`;
+    }
+
     document.getElementById('findMatchesBtn').addEventListener('click', async () => {
       const resultsDiv = document.getElementById('results');
       resultsDiv.innerHTML = '<p class="text-center text-stone-500">Calculating scaled recipes...</p>';
@@ -134,7 +143,7 @@
 
         // Apply visual category filter
         if (currentFilter !== "all") {
-          matches = matches.filter(m => m.title.toLowerCase().includes(currentFilter));
+          matches = matches.filter(m => m.title && m.title.toLowerCase().includes(currentFilter));
         }
 
         if (!matches || matches.length === 0) {
@@ -142,31 +151,40 @@
           return;
         }
 
-        resultsDiv.innerHTML = matches.map(recipe => `
-          <div class="border border-stone-200 bg-stone-50 rounded-xl p-5 shadow-sm">
-            <div class="flex justify-between items-start mb-2">
-              <div>
-                <h3 class="text-xl font-bold text-amber-950">${recipe.title}</h3>
-                <span class="inline-block mt-1 text-xs px-2.5 py-0.5 rounded-full font-bold ${recipe.matchPercentage >= 75 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
-                  ${recipe.matchPercentage}% Match
-                </span>
-                <span class="text-xs text-stone-500 ml-2">Scaled for <strong>${recipe.targetServings} servings</strong></span>
+        resultsDiv.innerHTML = matches.map(recipe => {
+          const validUrl = formatExternalUrl(recipe.sourceUrl);
+          const linkButton = validUrl
+            ? `<a href="${validUrl}" target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-amber-700 hover:text-amber-900 underline inline-flex items-center gap-1">View Steps ↗</a>`
+            : `<span class="text-xs text-stone-400 italic">No external link</span>`;
+
+          const scaledList = (recipe.scaledIngredients || []).map(ing => `
+            <li class="flex justify-between py-1 border-b border-stone-200 ${ing.isSufficient ? 'text-stone-700' : 'text-rose-600 font-semibold'}">
+              <span>${ing.name} — ${ing.requiredAmount} ${(ing.unit || '').toLowerCase()}</span>
+              <span>${ing.isSufficient ? '✓ Have enough' : `⚠ Need ${Math.round((ing.requiredAmount - ing.availableAmount)*10)/10} more`}</span>
+            </li>
+          `).join('');
+
+          return `
+            <div class="border border-stone-200 bg-stone-50 rounded-xl p-5 shadow-sm">
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <h3 class="text-xl font-bold text-amber-950">${recipe.title || 'Untitled Recipe'}</h3>
+                  <span class="inline-block mt-1 text-xs px-2.5 py-0.5 rounded-full font-bold ${recipe.matchPercentage >= 75 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                    ${recipe.matchPercentage || 0}% Match
+                  </span>
+                  <span class="text-xs text-stone-500 ml-2">Scaled for <strong>${recipe.targetServings || 1} servings</strong></span>
+                </div>
+                ${linkButton}
               </div>
-              <a href="${recipe.sourceUrl}" target="_blank" class="text-sm font-semibold text-amber-700 hover:underline">View Steps ↗</a>
+              <div class="mt-4">
+                <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Ingredients Scaled to Your Servings</h4>
+                <ul class="text-sm space-y-1">
+                  ${scaledList}
+                </ul>
+              </div>
             </div>
-            <div class="mt-4">
-              <h4 class="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Ingredients Scaled to Your Servings</h4>
-              <ul class="text-sm space-y-1">
-                ${recipe.scaledIngredients.map(ing => `
-                  <li class="flex justify-between py-1 border-b border-stone-200 ${ing.isSufficient ? 'text-stone-700' : 'text-rose-600 font-semibold'}">
-                    <span>${ing.name} — ${ing.requiredAmount} ${ing.unit.toLowerCase()}</span>
-                    <span>${ing.isSufficient ? '✓ Have enough' : `⚠ Need ${Math.round((ing.requiredAmount - ing.availableAmount)*10)/10} more`}</span>
-                  </li>
-                `).join('')}
-              </ul>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       } catch (err) {
         resultsDiv.innerHTML = '<p class="text-rose-500 text-center">Failed to fetch matches from server.</p>';
       }
